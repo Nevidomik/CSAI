@@ -1,5 +1,5 @@
 //Виконано згідно варіанту 5 методичних вказівок
-
+//
 #include <iostream>
 #include <cmath>
 #include <vector>
