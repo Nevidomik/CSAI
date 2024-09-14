@@ -1,6 +1,4 @@
-//Виконано згідно варіанту 5 методичних вказівок
-//
-#include <iostream>
+#include <iostream> //Виконано згідно варіанту 5 методичних вказівок
 #include <cmath>
 #include <vector>
 
