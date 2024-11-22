@@ -45,14 +45,14 @@ int main()
     {
         result += array_R[i];
     }
-    printf("\n\n=+=+=+ TASK 2 =+=+=+\nSeries resistance equal : %i", result);
+    printf("\n\n=+=+=+ TASK 3 =+=+=+\nSeries resistance equal : %i (Om)", result);
 
     float result_paralel = 0;
     for (int i = 0; i < size_array; i++)
     {
         result_paralel += (1.0 / array_R[i]);
     }
-    printf("\nParalel resistance equal : %.3f", result_paralel);
+    printf("\nParalel resistance equal : %.3f (Om)", result_paralel);
 }
 
 float Sum(short lower_bound_summation, short upper_bound_summation, short exp_left, short exp_right, float left[5], float right[5])
