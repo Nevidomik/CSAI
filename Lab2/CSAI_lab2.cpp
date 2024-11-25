@@ -1,14 +1,36 @@
 #include <iostream>
 #include <cmath>
+#include <ftxui/component/captured_mouse.hpp>
+#include <ftxui/component/component.hpp>
+#include <ftxui/component/component_options.hpp>
+#include <ftxui/component/screen_interactive.hpp>
 
 using namespace std;
+using namespace ftxui;
 
 float function_one(float x);
 float function_two_one(float z);
 float function_two_two(float z);
 
 int main(){
-    cout << "lab 2" << endl;
+    auto screen = ScreenInteractive::TerminalOutput();
+    vector<std::string> enties = {
+        "entry 1",
+        "entry 2",
+        "entry 3",
+    };
+    int selected = 0;
+
+    MenuOption option;
+    option.on_enter = screen.ExitLoopClosure();
+    auto menu = Menu(&enties, &selected, option);
+
+    screen.Loop(menu);
+
+    cout << "Selected element = " << selected << endl;
+
+
+ /////  
 
     float y, x = 0.6, step_x = 1.5;
     int n = 6;
