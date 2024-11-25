@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cmath>
+#include <vector>
+#include <string>
 #include <ftxui/component/captured_mouse.hpp>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
@@ -11,28 +13,125 @@ using namespace ftxui;
 float function_one(float x);
 float function_two_one(float z);
 float function_two_two(float z);
+float task_first(float x, int select);
+float task_second(float z, int select);
 
 int main(){
-    auto screen = ScreenInteractive::TerminalOutput();
-    vector<std::string> enties = {
-        "entry 1",
-        "entry 2",
-        "entry 3",
+    vector<string> tab_values {
+        "Task 1",
+        "Task 2",
     };
-    int selected = 0;
+    int tab_selected = 0;
+    auto tab_toggle = Toggle(&tab_values, &tab_selected);
 
+    vector<string> entries {
+        "for",
+        "while",
+        "do ... while",
+    };
+    int entries_selected = 0;
     MenuOption option;
-    option.on_enter = screen.ExitLoopClosure();
-    auto menu = Menu(&enties, &selected, option);
 
-    screen.Loop(menu);
+    vector<string> left_column;
+    vector<string> right_column;
 
-    cout << "Selected element = " << selected << endl;
+    option.on_enter = [&]{
+        int x;
+        if(entries[entries_selected] == "for"){
+            left_column = {"a", "b", "c"};
+            right_column = {"1", "2", "3"};
+        } else if(entries[entries_selected] == "while") {
+            left_column = {"a", "b", "x"};
+            right_column = {"1", "2", "5"};
+        } else if(entries[entries_selected] == "do ... while") {
+            left_column = {"a", "b", "d"};
+            right_column = {"1", "2", "4"};
+        }
+    };
+    auto menu = Menu(&entries, &entries_selected, option);
 
+    string input_x = "0";
+    auto variable_input = Input(&input_x, "Enter x: ");
+
+   auto columns_renderer = Renderer([&] {
+        // Build the left column
+        Elements left_elements;
+        for (const auto& item : left_column) {
+            left_elements.push_back(text(item));
+        }
+
+        // Build the right column
+        Elements right_elements;
+        for (const auto& item : right_column) {
+            right_elements.push_back(text(item));
+        }
+
+        // Combine columns and return
+        return hbox({
+            vbox(std::move(left_elements)) | border, // Left column
+            separator(),
+            vbox(std::move(right_elements)) | border // Right column
+        });
+    });
+
+    // Tab container to handle tabs
+    auto tab_container = Container::Tab({
+        Renderer([&] {
+            return vbox({
+                menu->Render(),      // Render menu
+                separator(),
+                variable_input->Render(),
+                separator(),
+                columns_renderer->Render(), // Render columns
+            });
+        }),
+        Renderer([&] {
+            return vbox({
+                menu->Render(),      // Render menu
+                separator(),
+                variable_input->Render(),
+                separator(),
+                columns_renderer->Render(), // Render columns
+            });
+        }),
+    }, &tab_selected);
+
+    // Vertical container
+    auto component = Container::Vertical({
+        tab_toggle,
+        menu,
+        variable_input,
+        columns_renderer,
+    });
+
+    // Main renderer
+    auto renderer = Renderer(component, [&] {
+        return vbox({
+            tab_toggle->Render(), // Render toggle
+            separator(),
+            tab_container->Render(), // Render tab content
+        }) | border;
+    });
+
+    // Start the interactive screen loop
+    ScreenInteractive::Fullscreen().Loop(renderer);
 
  /////  
 
-    float y, x = 0.6, step_x = 1.5;
+}
+
+float function_one(float x){
+    return (x + cos(2 * x)) / (x + 2);
+}
+float function_two_one(float z){
+    return (z - sin(z));
+}
+float function_two_two(float z){
+    return (atan(z - 0.3));
+}
+
+float task_first(float x, int select){
+   float y, x = 0.6, step_x = 1.5;
     int n = 6;
 ///
     for(int i = 0; i < n; n++){
@@ -80,7 +179,11 @@ int main(){
         y = function_one(x);
         x += step_x;
     } while(x <= 10);
-////
+    return 0;
+}
+
+float task_second(float z, int select){
+    ////
     float w, z = -2, step_z = 0.5;
 
     for(; z <= 3; z += step_z){
@@ -113,15 +216,6 @@ int main(){
             z += step_z;
         }
     } while(z <= 3);
-
-}
-
-float function_one(float x){
-    return (x + cos(2 * x)) / (x + 2);
-}
-float function_two_one(float z){
-    return (z - sin(z));
-}
-float function_two_two(float z){
-    return (atan(z - 0.3));
+    
+    return 0;
 }
