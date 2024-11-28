@@ -39,15 +39,15 @@ set(
     #==============
     #Windows example
     #==============
-    # D:/programing/cpp/FTXUI/build/libftxui-component.a
-    # D:/programing/cpp/FTXUI/build/libftxui-screen.a
-    # D:/programing/cpp/FTXUI/build/libftxui-dom.a
+    D:/programing/cpp/FTXUI/build/libftxui-component.a
+    D:/programing/cpp/FTXUI/build/libftxui-screen.a
+    D:/programing/cpp/FTXUI/build/libftxui-dom.a
     #==============
     #Linux example
     #==============
-    /usr/local/lib/libftxui-component.a
-    /usr/local/lib/libftxui-screen.a
-    /usr/local/lib/libftxui-dom.a
+    # /usr/local/lib/libftxui-component.a
+    # /usr/local/lib/libftxui-screen.a
+    # /usr/local/lib/libftxui-dom.a
 )
 
 target_link_libraries(${PROJECT_NAME} ${FTXUI_LIBRARIES})

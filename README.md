@@ -1,1 +1,1 @@
-# Cumputer Sysytem AI
+# Cumputer System AI
