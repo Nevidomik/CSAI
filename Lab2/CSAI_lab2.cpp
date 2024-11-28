@@ -14,8 +14,11 @@ float function_one(float x);
 float function_two_one(float z);
 float function_two_two(float z);
 float task_first(float x, int select);
-float task_second(float z, int select);
+std::vector<float> task_second(float z, int select);
+std::vector<string> vectortostring(vector<float>);
+std::vector<string> vectortostring2(int);
 
+//right and left is MIXED UP
 int main(){
     //variables, vectors, components
     vector<string> tab_values {
@@ -57,6 +60,22 @@ int main(){
     };
     auto menu = Menu(&entries, &entries_selected, option);
 
+    MenuOption option2;
+    option2.on_enter = [&]{
+        int x;
+        if(entries[entries_selected] == "for"){
+            left_column = vectortostring(task_second(stof(input_x), 1));
+            right_column = vectortostring2(left_column.size());
+        } else if(entries[entries_selected] == "while") {
+            left_column = vectortostring(task_second(stof(input_x), 2));
+            right_column = vectortostring2(left_column.size());
+        } else if(entries[entries_selected] == "do ... while") {
+            left_column = vectortostring(task_second(stof(input_x), 3));
+            right_column = vectortostring2(left_column.size());
+        }
+    };
+    auto menu2 = Menu(&entries, &entries_selected, option2);
+
 
 
    auto columns_renderer = Renderer([&] {
@@ -74,9 +93,9 @@ int main(){
 
         // Combine columns and return
         return hbox({
-            vbox(std::move(left_elements)) | border, // Left column
+            vbox(std::move(right_elements)) | border, // Left column
             separator(),
-            vbox(std::move(right_elements)) | border // Right column
+            vbox(std::move(left_elements)) | border // Right column
         });
     });
 
@@ -95,7 +114,7 @@ int main(){
         }),
         Renderer([&] {
             return vbox({
-                menu->Render(),      // Render menu
+                menu2->Render(),      // Render menu
                 separator(),
                 variable_input->Render(),
                 separator(),
@@ -108,6 +127,7 @@ int main(){
     auto component = Container::Vertical({
         tab_toggle,
         menu,
+        menu2,
         variable_input,
         subtask_input,
         columns_renderer,
@@ -191,40 +211,64 @@ float task_first(float x = 0.6, int select = 0){
     return 0;
 }
 
-float task_second(float z = -2, int select = 0){
+vector<float> task_second(float z = -2, int select = 0){
     ////
-    float w, step_z = 0.5;
-
-    for(; z <= 3; z += step_z){
-        if (-2 <= z && z <= 0.5){
-            w = function_two_one(z);
-        }
-        else if(0.5 < z){
-            w = function_two_two(z);
-        }
+    float step_z = 0.5;
+    vector<float> w;
+    switch(select){
+        case 1:
+            for(; z <= 3; z += step_z){
+                if (-2 <= z && z <= 0.5){
+                    w.push_back(function_two_one(z));
+                }
+                else if(0.5 < z){
+                    w.push_back(function_two_two(z));
+                }
+            }
+            break;
+        case 2:
+            while(z <= 3){
+                if (-2 <= z && z <= 0.5){
+                    w.push_back(function_two_one(z));
+                    z += step_z;
+                }
+                else if(0.5 < z){
+                    w.push_back(function_two_two(z));
+                    z += step_z;
+                }
+            }
+            break;
+        case 3:
+            do{
+                if (-2 <= z && z <= 0.5){
+                    w.push_back(function_two_one(z));
+                    z += step_z;
+                }
+                else if(0.5 < z){
+                    w.push_back(function_two_two(z));
+                    z += step_z;
+                }
+            } while(z <= 3);
+            break;
+        default:
+            w.push_back(0);
+            return w;   
     }
+    return w;
+}
 
-    while(z <= 3){
-        if (-2 <= z && z <= 0.5){
-            w = function_two_one(z);
-            z += step_z;
-        }
-        else if(0.5 < z){
-            w = function_two_two(z);
-            z += step_z;
-        }
+vector<string> vectortostring(vector<float> vect){
+    vector<string> convert;
+    for(float i: vect){
+        convert.push_back(to_string(i));
     }
+    return convert;
+}
 
-    do{
-        if (-2 <= z && z <= 0.5){
-            w = function_two_one(z);
-            z += step_z;
-        }
-        else if(0.5 < z){
-            w = function_two_two(z);
-            z += step_z;
-        }
-    } while(z <= 3);
-
-    return 0;
+vector<string> vectortostring2(int size){
+    vector<string> convert;
+    for(int i = 0; i < size; i++){
+        convert.push_back(to_string(i + 1));
+    }
+    return convert;
 }

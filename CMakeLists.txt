@@ -33,21 +33,22 @@ set(
 
 add_executable(${PROJECT_NAME} ${source_files} ${support_files})
 
-include_directories(D:/programing/cpp/FTXUI/include)
+# include_directories(D:/programing/cpp/FTXUI/include)
+include_directories(/home/lord/programing/FTXUI)
 set(
     FTXUI_LIBRARIES
     #==============
     #Windows example
     #==============
-    D:/programing/cpp/FTXUI/build/libftxui-component.a
-    D:/programing/cpp/FTXUI/build/libftxui-screen.a
-    D:/programing/cpp/FTXUI/build/libftxui-dom.a
+    # D:/programing/cpp/FTXUI/build/libftxui-component.a
+    # D:/programing/cpp/FTXUI/build/libftxui-screen.a
+    # D:/programing/cpp/FTXUI/build/libftxui-dom.a
     #==============
     #Linux example
     #==============
-    # /usr/local/lib/libftxui-component.a
-    # /usr/local/lib/libftxui-screen.a
-    # /usr/local/lib/libftxui-dom.a
+    /usr/local/lib/libftxui-component.a
+    /usr/local/lib/libftxui-screen.a
+    /usr/local/lib/libftxui-dom.a
 )
 
 target_link_libraries(${PROJECT_NAME} ${FTXUI_LIBRARIES})
