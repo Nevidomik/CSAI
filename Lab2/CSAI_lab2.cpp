@@ -17,6 +17,7 @@ float task_first(float x, int select);
 float task_second(float z, int select);
 
 int main(){
+    //variables, vectors, components
     vector<string> tab_values {
         "Task 1",
         "Task 2",
@@ -30,11 +31,17 @@ int main(){
         "do ... while",
     };
     int entries_selected = 0;
-    MenuOption option;
+
 
     vector<string> left_column;
     vector<string> right_column;
 
+    string input_subtask = "a";
+    auto subtask_input = Input(&input_subtask, "Enter a or b: ");
+    string input_x = "0";
+    auto variable_input = Input(&input_x, "Enter x: ");
+
+    MenuOption option;
     option.on_enter = [&]{
         int x;
         if(entries[entries_selected] == "for"){
@@ -50,8 +57,7 @@ int main(){
     };
     auto menu = Menu(&entries, &entries_selected, option);
 
-    string input_x = "0";
-    auto variable_input = Input(&input_x, "Enter x: ");
+
 
    auto columns_renderer = Renderer([&] {
         // Build the left column
@@ -82,6 +88,8 @@ int main(){
                 separator(),
                 variable_input->Render(),
                 separator(),
+                subtask_input->Render(),
+                separator(),
                 columns_renderer->Render(), // Render columns
             });
         }),
@@ -101,6 +109,7 @@ int main(){
         tab_toggle,
         menu,
         variable_input,
+        subtask_input,
         columns_renderer,
     });
 
@@ -130,8 +139,8 @@ float function_two_two(float z){
     return (atan(z - 0.3));
 }
 
-float task_first(float x, int select){
-   float y, x = 0.6, step_x = 1.5;
+float task_first(float x = 0.6, int select = 0){
+   float y, step_x = 1.5;
     int n = 6;
 ///
     for(int i = 0; i < n; n++){
@@ -182,9 +191,9 @@ float task_first(float x, int select){
     return 0;
 }
 
-float task_second(float z, int select){
+float task_second(float z = -2, int select = 0){
     ////
-    float w, z = -2, step_z = 0.5;
+    float w, step_z = 0.5;
 
     for(; z <= 3; z += step_z){
         if (-2 <= z && z <= 0.5){
@@ -216,6 +225,6 @@ float task_second(float z, int select){
             z += step_z;
         }
     } while(z <= 3);
-    
+
     return 0;
 }
