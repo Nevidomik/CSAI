@@ -13,8 +13,8 @@ using namespace ftxui;
 float function_one(float x);
 float function_two_one(float z);
 float function_two_two(float z);
-float task_first(float x, int select);
-std::vector<float> task_second(float z, int select);
+std::vector<float> task_first(float, int, string);
+std::vector<float> task_second(float, int);
 std::vector<string> vectortostring(vector<float>);
 std::vector<string> vectortostring2(int);
 
@@ -48,14 +48,14 @@ int main(){
     option.on_enter = [&]{
         int x;
         if(entries[entries_selected] == "for"){
-            left_column = {"a", "b", "c"};
-            right_column = {"1", "2", "3"};
+            left_column = vectortostring(task_first(stof(input_x), 1, input_subtask));
+            right_column = vectortostring2(left_column.size());
         } else if(entries[entries_selected] == "while") {
-            left_column = {"a", "b", "x"};
-            right_column = {"1", "2", "5"};
+            left_column = vectortostring(task_first(stof(input_x), 2, input_subtask));
+            right_column = vectortostring2(left_column.size());
         } else if(entries[entries_selected] == "do ... while") {
-            left_column = {"a", "b", "d"};
-            right_column = {"1", "2", "4"};
+            left_column = vectortostring(task_first(stof(input_x), 3, input_subtask));
+            right_column = vectortostring2(left_column.size());
         }
     };
     auto menu = Menu(&entries, &entries_selected, option);
@@ -159,56 +159,78 @@ float function_two_two(float z){
     return (atan(z - 0.3));
 }
 
-float task_first(float x = 0.6, int select = 0){
-   float y, step_x = 1.5;
+vector<float> task_first(float x = 0.6, int select = 0, string subtask = "c"){
+    float step_x = 1.5;
     int n = 6;
+    vector<float> y;
 ///
-    for(int i = 0; i < n; n++){
-        if (x >= 0.6) {
-            y = function_one(x);
-            x += step_x;
-        } else {
-            break;
+    if(subtask == "a"){
+        switch(select){
+            case 1:
+                for (int i = 0; i < n; n++){
+                    if (x >= 0.6){
+                        y.push_back(function_one(x));
+                        x += step_x;
+                    } else {
+                        break;
+                    }
+                }
+                break;
+            case 2:
+                while (n != 0){
+                    if (x >= 0.6){
+                        y.push_back(function_one(x));
+                        x += step_x;
+                        n--;
+                    } else {
+                        break;
+                    }
+                }
+                break;
+            case 3:
+                do{
+                    if (x >= 0.6){
+                        y.push_back(function_one(x));
+                        x += step_x;
+                        n--;
+                    } else {
+                        break;
+                    }
+                } while (n != 0);
+                break;
+            default:
+                y.push_back(0);
+                break;
         }
-    }
-
-    while(n != 0){
-        if(x >= 0.6) {
-            y = function_one(x);
-            x += step_x;
-            n--;
-        } else {
-            break;
+    } else if (subtask == "b"){
+        step_x = 0.8;
+        switch (select){
+            case 1:
+                for (; x <= 10; x += step_x){
+                    y.push_back(function_one(x));
+                }
+                break;
+            case 2:
+                while (x <= 10){
+                    y.push_back(function_one(x));
+                    x += step_x;
+                }
+                break;
+            case 3:
+                do{
+                    y.push_back(function_one(x));
+                    x += step_x;
+                } while (x <= 10);
+                break;
+            default:
+                y.push_back(0);
+                break;
         }
+    } else {
+        y.push_back(0);
     }
 
-    do {
-        if(x >= 0.6) {
-            y = function_one(x);
-            x += step_x;
-            n--;
-        } else {
-            break;
-        }
-    } while (n != 0);
-////
-    x = 0.2;
-    step_x = 0.8;
-
-    for(; x <= 10; x += step_x){
-        y = function_one(x);
-    }
-
-    while(x <= 10){
-        y = function_one(x);
-        x += step_x;
-    }
-
-    do {
-        y = function_one(x);
-        x += step_x;
-    } while(x <= 10);
-    return 0;
+    return y;
 }
 
 vector<float> task_second(float z = -2, int select = 0){
