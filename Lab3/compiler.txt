@@ -1,0 +1,3 @@
+*Example compilation command for linux
+
+g++ CSAI_lab3.cpp -L/usr/local/lib -lftxui-component -lftxui-screen -lftxui-dom -o lab3

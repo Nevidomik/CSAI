@@ -78,7 +78,7 @@ int main(){
 
 
 
-   auto columns_renderer = Renderer([&] {
+    auto columns_renderer = Renderer([&] {
         // Build the left column
         Elements left_elements;
         for (const auto& item : left_column) {
