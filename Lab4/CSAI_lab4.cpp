@@ -36,9 +36,11 @@ void input_layer_errors(void);
 void output_weights(void);
 void hidden_weights(void);
 void input_weights(int);
+void initialize_weights();
 
-int main(void)
+    int main(void)
 {
+    initialize_weights();
     ofstream weights_file("weights.txt");
     ofstream output_file1("output1.txt");
     ofstream output_file2("output2.txt");
@@ -137,26 +139,26 @@ void run(int index)
         for (int j = 0; j < INPUT_NUMBER; j++)
         {
             sum += INPUT_LAYER[i].weights[j] * Input_Test[index];
-            INPUT_LAYER[i].output_signal = sigmoid(sum - INPUT_LAYER[i].delta_error);
         }
+        INPUT_LAYER[i].output_signal = sigmoid(sum - INPUT_LAYER[i].delta_error);
     }
     for (int i = 0; i < HIDDEN_NUMBER; i++)
     {
         sum = 0;
         for (int j = 0; j < INPUT_NUMBER; j++)
         {
-            sum += HIDDEN_LAYER[i].weights[j] * Input_Test[index];
-            HIDDEN_LAYER[i].output_signal = sigmoid(sum - HIDDEN_LAYER[i].delta_error);
+            sum += HIDDEN_LAYER[i].weights[j] * INPUT_LAYER[j].output_signal;
         }
+        HIDDEN_LAYER[i].output_signal = sigmoid(sum - HIDDEN_LAYER[i].delta_error);
     }
     for (int i = 0; i < OUTPUT_NUMBER; i++)
     {
         sum = 0;
         for (int j = 0; j < HIDDEN_NUMBER; j++)
         {
-            sum += OUTPUT_LAYER[i].weights[j] * HIDDEN_LAYER[i].output_signal;
-            OUTPUT_LAYER[i].output_signal = sigmoid(sum - HIDDEN_LAYER[i].delta_error);
+            sum += OUTPUT_LAYER[i].weights[j] * HIDDEN_LAYER[j].output_signal;
         }
+        OUTPUT_LAYER[i].output_signal = sigmoid(sum - OUTPUT_LAYER[i].delta_error);
     }
 }
 
@@ -230,6 +232,32 @@ void input_weights(int index)
         {
             INPUT_LAYER[i].weights[j] += rate * INPUT_LAYER[i].error_out * Input_Test[index];
             INPUT_LAYER[i].delta_error -= rate * INPUT_LAYER[i].error_out;
+        }
+    }
+}
+
+void initialize_weights()
+{
+    srand(static_cast<unsigned>(time(0)));
+    for (int i = 0; i < INPUT_NUMBER; i++)
+    {
+        for (int j = 0; j < MAX_NUMBER; j++)
+        {
+            INPUT_LAYER[i].weights[j] = ((double)rand() / RAND_MAX) * 2 - 1; // Від -1 до 1
+        }
+    }
+    for (int i = 0; i < HIDDEN_NUMBER; i++)
+    {
+        for (int j = 0; j < INPUT_NUMBER; j++)
+        {
+            HIDDEN_LAYER[i].weights[j] = ((double)rand() / RAND_MAX) * 2 - 1;
+        }
+    }
+    for (int i = 0; i < OUTPUT_NUMBER; i++)
+    {
+        for (int j = 0; j < HIDDEN_NUMBER; j++)
+        {
+            OUTPUT_LAYER[i].weights[j] = ((double)rand() / RAND_MAX) * 2 - 1;
         }
     }
 }
