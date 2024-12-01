@@ -56,7 +56,7 @@ int main(void)
     
     for(int epoch_count = 0; epoch_count < 50000; epoch_count){
         epoch_file << epoch_count << "\n";
-        mse = 0;
+           = 0;
         for(int i = 0; i < OUTPUT_NUMBER; i++){
             for(int k = 0; k < SIZE_ARRAY; k++){
                 run(k);
