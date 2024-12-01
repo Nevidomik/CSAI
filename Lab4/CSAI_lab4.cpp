@@ -4,8 +4,8 @@
 #include <windows.h>
 
 using namespace std;
-const int MAX_NUMBER = 3;
-const int INPUT_NUMBER = 1;
+const int MAX_NUMBER = 5;
+const int INPUT_NUMBER = 5;
 const int HIDDEN_NUMBER = 2;
 const int OUTPUT_NUMBER = 1;
 const int SIZE_ARRAY = 5;
@@ -66,12 +66,15 @@ void initialize_weights();
             for (int k = 0; k < SIZE_ARRAY; k++)
             {
                 run(k);
+                input_layer_errors();
                 output_layer_errors(k);
                 hidden_layer_errors();
                 output_weights();
                 weights_file << OUTPUT_LAYER[i].weights[k] << "\t";
                 hidden_weights();
                 weights_file << HIDDEN_LAYER[i].weights[k] << "\t";
+                input_weights(k);
+                weights_file << INPUT_LAYER[i].weights[k] << "\t";
                 mse += pow((OUTPUT_LAYER[i].output_signal - Output_Need[k]), 2);
                 cout << "|" << OUTPUT_LAYER[0].output_signal << "\t";
                 Temp_Need[k] = OUTPUT_LAYER[0].output_signal;
@@ -145,9 +148,9 @@ void run(int index)
     for (int i = 0; i < HIDDEN_NUMBER; i++)
     {
         sum = 0;
-        for (int j = 0; j < INPUT_NUMBER; j++)
+        for (int j = 0; j < 1; j++)
         {
-            sum += HIDDEN_LAYER[i].weights[j] * INPUT_LAYER[j].output_signal;
+            sum += HIDDEN_LAYER[i].weights[j] * INPUT_LAYER[i].output_signal;
         }
         HIDDEN_LAYER[i].output_signal = sigmoid(sum - HIDDEN_LAYER[i].delta_error);
     }
@@ -187,10 +190,10 @@ void hidden_layer_errors(void)
 void input_layer_errors(void)
 {
     double sum;
-    for (int i = 0; i < MAX_NUMBER; i++)
+    for (int i = 0; i < INPUT_NUMBER; i++)
     {
         sum = 0;
-        for (int j = 0; j < INPUT_NUMBER; j++)
+        for (int j = 0; j < HIDDEN_NUMBER; j++)
         {
             sum += HIDDEN_LAYER[j].error_out * HIDDEN_LAYER[j].weights[i];
             INPUT_LAYER[i].error_out = INPUT_LAYER[i].output_signal * (1 - INPUT_LAYER[i].output_signal) * sum;
