@@ -4,26 +4,27 @@
 #include <windows.h>
 
 using namespace std;
-const int MAX_NUMBER = 5;
-const int INPUT_NUMBER = 5;
+const int MAX_NUMBER = 3;
+const int INPUT_NUMBER = 1;
 const int HIDDEN_NUMBER = 2;
 const int OUTPUT_NUMBER = 1;
 const int SIZE_ARRAY = 5;
-double Input_Test[SIZE_ARRAY] = { 0.1, 0.1, 0.3, 0.1, 0.2 };
-double Output_Need[SIZE_ARRAY] = { 0, 0, 1, 0, 0 };
+double Input_Test[SIZE_ARRAY] = {0.1, 0.1, 0.3, 0.1, 0.2};
+double Output_Need[SIZE_ARRAY] = {0, 0, 1, 0, 0};
 double Temp_Need[SIZE_ARRAY];
 
 LARGE_INTEGER Frequency;
 LARGE_INTEGER Ticks1, Ticks2;
 double ElapsedTime;
 
-struct neuron{
-    double weights{};
+struct neuron
+{
+    double weights[MAX_NUMBER];
     double output_signal;
     double error_out;
     double delta_error;
 };
-neuron INPUT_LAYER[SIZE_ARRAY];
+neuron INPUT_LAYER[INPUT_NUMBER];
 neuron HIDDEN_LAYER[HIDDEN_NUMBER];
 neuron OUTPUT_LAYER[OUTPUT_NUMBER];
 
@@ -48,36 +49,39 @@ int main(void)
     ofstream erorr_file("erorr.txt");
     cout.precision(3);
 
-    double mse = 0; //what mse?
+    double mse = 0; // what mse?
     QueryPerformanceFrequency(&Frequency);
 
     weights_file << "output weights \t \t" << "hidden weights \n";
     QueryPerformanceCounter(&Ticks1);
-    
-    for(int epoch_count = 0; epoch_count < 50000; epoch_count){
+
+    for (int epoch_count = 0; epoch_count < 50000; epoch_count++)
+    {
         epoch_file << epoch_count << "\n";
-           = 0;
-        for(int i = 0; i < OUTPUT_NUMBER; i++){
-            for(int k = 0; k < SIZE_ARRAY; k++){
+        mse = 0;
+        for (int i = 0; i < OUTPUT_NUMBER; i++)
+        {
+            for (int k = 0; k < SIZE_ARRAY; k++)
+            {
                 run(k);
                 output_layer_errors(k);
                 hidden_layer_errors();
                 output_weights();
-                weights_file << OUTPUT_LAYER[i].weights << "\t";
+                weights_file << OUTPUT_LAYER[i].weights[k] << "\t";
                 hidden_weights();
-                weights_file << HIDDEN_LAYER[i].weights << "\t";
+                weights_file << HIDDEN_LAYER[i].weights[k] << "\t";
                 mse += pow((OUTPUT_LAYER[i].output_signal - Output_Need[k]), 2);
                 cout << "|" << OUTPUT_LAYER[0].output_signal << "\t";
                 Temp_Need[k] = OUTPUT_LAYER[0].output_signal;
-                if(k == 0)
+                if (k == 0)
                     output_file1 << OUTPUT_LAYER[0].output_signal << "\n";
-                else if(k == 1)
+                else if (k == 1)
                     output_file2 << OUTPUT_LAYER[0].output_signal << "\n";
-                else if(k == 2)
+                else if (k == 2)
                     output_file3 << OUTPUT_LAYER[0].output_signal << "\n";
-                else if(k == 3)
+                else if (k == 3)
                     output_file4 << OUTPUT_LAYER[0].output_signal << "\n";
-                else if(k == 4)
+                else if (k == 4)
                     output_file5 << OUTPUT_LAYER[0].output_signal << "\n";
             }
         }
@@ -93,12 +97,14 @@ int main(void)
     system("cls");
     QueryPerformanceCounter(&Ticks2);
     cout << "----------------------------------learnig results----------------------------" << endl;
-    for (int k = 0; k < SIZE_ARRAY; k++){
+    for (int k = 0; k < SIZE_ARRAY; k++)
+    {
         cout << Input_Test[k] << "--->" << Temp_Need[k] << endl;
     }
-    double test_values[SIZE_ARRAY] = { 0.1, 0.5, 0.3, 0.2, 0.1 };
+    double test_values[SIZE_ARRAY] = {0.1, 0.5, 0.3, 0.2, 0.1};
     cout << "-------------------------------------run results-----------------------------" << endl;
-    for(int k = 0; k < SIZE_ARRAY; k++){
+    for (int k = 0; k < SIZE_ARRAY; k++)
+    {
         run(k);
         cout << test_values[k] << "--->" << OUTPUT_LAYER[0].output_signal << "\t" << endl;
     }
@@ -116,66 +122,88 @@ int main(void)
     return 0;
 }
 
-double sigmoid(double x){
+double sigmoid(double x)
+{
     double y = 1 / (1 + exp(-x));
     return y;
 }
-void run(int index){ //index is global k
-    double sum = 0.0;
+void run(int index)
+{ // index is global k
+    double sum;
 
-    for(int j = 0; j < INPUT_NUMBER; j++){
-        sum += INPUT_LAYER[j].weights * Input_Test[index];
-        INPUT_LAYER[j].output_signal = sigmoid(sum - INPUT_LAYER[j].delta_error);
-    }
-        
-    for(int i = 0; i < HIDDEN_NUMBER; i++){
+    for (int i = 0; i < MAX_NUMBER; i++)
+    {
         sum = 0;
-        for(int j = 0; j < INPUT_NUMBER; j++){
-            sum += HIDDEN_LAYER[i].weights * INPUT_LAYER[index].output_signal;
+        for (int j = 0; j < INPUT_NUMBER; j++)
+        {
+            sum += INPUT_LAYER[i].weights[j] * Input_Test[index];
+            INPUT_LAYER[i].output_signal = sigmoid(sum - INPUT_LAYER[i].delta_error);
+        }
+    }
+    for (int i = 0; i < HIDDEN_NUMBER; i++)
+    {
+        sum = 0;
+        for (int j = 0; j < INPUT_NUMBER; j++)
+        {
+            sum += HIDDEN_LAYER[i].weights[j] * Input_Test[index];
             HIDDEN_LAYER[i].output_signal = sigmoid(sum - HIDDEN_LAYER[i].delta_error);
         }
     }
-    for(int i = 0; i < OUTPUT_NUMBER; i++){
+    for (int i = 0; i < OUTPUT_NUMBER; i++)
+    {
         sum = 0;
-        for(int j = 0; j < HIDDEN_NUMBER; j++){
-            sum += OUTPUT_LAYER[i].weights * HIDDEN_LAYER[i].output_signal;
+        for (int j = 0; j < HIDDEN_NUMBER; j++)
+        {
+            sum += OUTPUT_LAYER[i].weights[j] * HIDDEN_LAYER[i].output_signal;
+            OUTPUT_LAYER[i].output_signal = sigmoid(sum - HIDDEN_LAYER[i].delta_error);
         }
     }
 }
 
-void output_layer_errors(int index){
-    for(int i = 0; i < OUTPUT_NUMBER; i++){
+void output_layer_errors(int index)
+{
+    for (int i = 0; i < OUTPUT_NUMBER; i++)
+    {
         OUTPUT_LAYER[i].error_out = Output_Need[index] - OUTPUT_LAYER[i].output_signal * (1 - OUTPUT_LAYER[i].output_signal);
     }
 }
 
-void hidden_layer_errors(void){
+void hidden_layer_errors(void)
+{
     double sum;
-    for(int i = 0; i < HIDDEN_NUMBER; i++){
+    for (int i = 0; i < HIDDEN_NUMBER; i++)
+    {
         sum = 0;
-        for(int j = 0; j < OUTPUT_NUMBER; j++){
-            sum += OUTPUT_LAYER[j].error_out * OUTPUT_LAYER[j].weights;
+        for (int j = 0; j < OUTPUT_NUMBER; j++)
+        {
+            sum += OUTPUT_LAYER[j].error_out * OUTPUT_LAYER[j].weights[i];
             HIDDEN_LAYER[i].error_out = HIDDEN_LAYER[i].output_signal * (1 - HIDDEN_LAYER[i].output_signal) * sum;
         }
     }
 }
 
-void input_layer_errors(void){
+void input_layer_errors(void)
+{
     double sum;
-    for(int i = 0; i < MAX_NUMBER; i++){
+    for (int i = 0; i < MAX_NUMBER; i++)
+    {
         sum = 0;
-        for(int j = 0; j < INPUT_NUMBER; j++){
-            sum += HIDDEN_LAYER[j].error_out * HIDDEN_LAYER[j].weights;
+        for (int j = 0; j < INPUT_NUMBER; j++)
+        {
+            sum += HIDDEN_LAYER[j].error_out * HIDDEN_LAYER[j].weights[i];
             INPUT_LAYER[i].error_out = INPUT_LAYER[i].output_signal * (1 - INPUT_LAYER[i].output_signal) * sum;
         }
     }
 }
 
-void output_weights(void){
+void output_weights(void)
+{
     double rate = 0.025;
-    for(int i = 0; i < OUTPUT_NUMBER; i++){
-        for(int j = 0; j < HIDDEN_NUMBER; j++){
-            OUTPUT_LAYER[i].weights += rate * OUTPUT_LAYER[i].error_out * HIDDEN_LAYER[j].output_signal;
+    for (int i = 0; i < OUTPUT_NUMBER; i++)
+    {
+        for (int j = 0; j < HIDDEN_NUMBER; j++)
+        {
+            OUTPUT_LAYER[i].weights[j] += rate * OUTPUT_LAYER[i].error_out * HIDDEN_LAYER[j].output_signal;
             OUTPUT_LAYER[i].delta_error -= rate * OUTPUT_LAYER[i].error_out;
         }
     }
@@ -183,19 +211,24 @@ void output_weights(void){
 void hidden_weights(void)
 {
     double rate = 0.025;
-    for(int i = 0; i < HIDDEN_NUMBER; i++){
-        for(int j = 0; j < INPUT_NUMBER; j++){
-            HIDDEN_LAYER[i].weights += rate * HIDDEN_LAYER[i].error_out * INPUT_LAYER[j].output_signal;
+    for (int i = 0; i < HIDDEN_NUMBER; i++)
+    {
+        for (int j = 0; j < INPUT_NUMBER; j++)
+        {
+            HIDDEN_LAYER[i].weights[j] += rate * HIDDEN_LAYER[i].error_out * INPUT_LAYER[j].output_signal;
             HIDDEN_LAYER[i].delta_error -= rate * HIDDEN_LAYER[i].error_out;
         }
     }
 }
 
-void input_weights(int index){
+void input_weights(int index)
+{
     double rate = 0.025;
-    for(int i = 0; i < INPUT_NUMBER; i++){
-        for(int j = 0; j < MAX_NUMBER; j++){
-            INPUT_LAYER[i].weights += rate * INPUT_LAYER[i].error_out * Input_Test[index];
+    for (int i = 0; i < INPUT_NUMBER; i++)
+    {
+        for (int j = 0; j < MAX_NUMBER; j++)
+        {
+            INPUT_LAYER[i].weights[j] += rate * INPUT_LAYER[i].error_out * Input_Test[index];
             INPUT_LAYER[i].delta_error -= rate * INPUT_LAYER[i].error_out;
         }
     }
