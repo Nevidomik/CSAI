@@ -2,221 +2,377 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
-#include <vector>
+#include <fstream>
+#include <windows.h>
 
 using namespace std;
 
-// Activation Functions
-double relu(double x)
+LARGE_INTEGER Frequency;
+LARGE_INTEGER Ticks1, Ticks2;
+double ElapsedTime;
+
+const int SIZE_ARRAY = 5;
+const int HIDDEN_NUMBER = 3;
+const int OUTPUT_NUMBER = SIZE_ARRAY;
+
+double Input_Test[SIZE_ARRAY] = {0.1, 0.1, 0.3, 0.1, 0.2};
+double Output_Need[SIZE_ARRAY] = {0, 0, 1, 0, 0};
+
+struct Neuron
 {
-    return (x > 0) ? x : 0;
+    double weights[SIZE_ARRAY];
+    double bias;
+    double output_signal;
+    double error_signal;
+};
+
+Neuron HIDDEN_LAYER[HIDDEN_NUMBER];
+Neuron OUTPUT_LAYER[OUTPUT_NUMBER];
+
+double sigmoid(double x)
+{
+    return 1.0 / (1.0 + exp(-x));
 }
 
-double relu_derivative(double x)
+void initialize_weights(Neuron layer[], int layer_size, int input_size)
 {
-    return (x > 0) ? 1 : 0;
-}
-
-void softmax(const vector<double> &input, vector<double> &output)
-{
-    double sum = 0.0;
-    for (double val : input)
+    srand((unsigned)time(0));
+    for (int i = 0; i < layer_size; i++)
     {
-        sum += exp(val);
-    }
-    for (size_t i = 0; i < input.size(); i++)
-    {
-        output[i] = exp(input[i]) / sum;
-    }
-}
-
-// Neural Network Parameters
-const int INPUT_SIZE = 5;
-const int HIDDEN_SIZE = 6;
-const int OUTPUT_SIZE = 5;
-const double LEARNING_RATE = 0.01;
-
-// Network Layers
-double input_layer[INPUT_SIZE];
-double hidden_layer[HIDDEN_SIZE];
-double output_layer[OUTPUT_SIZE];
-
-// Weights and Biases
-double input_to_hidden[HIDDEN_SIZE][INPUT_SIZE];
-double hidden_bias[HIDDEN_SIZE];
-double hidden_to_output[OUTPUT_SIZE][HIDDEN_SIZE];
-double output_bias[OUTPUT_SIZE];
-
-// Initialize Weights and Biases
-void initialize_weights()
-{
-    srand(static_cast<unsigned int>(time(0)));
-    for (int i = 0; i < HIDDEN_SIZE; i++)
-    {
-        for (int j = 0; j < INPUT_SIZE; j++)
+        for (int j = 0; j < input_size; j++)
         {
-            = ((double)rand() / RAND_MAX) - 0.5; // Random values between -0.5 and 0.5
+            layer[i].weights[j] = ((double)rand() / RAND_MAX) - 0.5; // Random weights [-0.5, 0.5]
         }
-        hidden_bias[i] = 0.0;
-    }
-    for (int i = 0; i < OUTPUT_SIZE; i++)
-    {
-        for (int j = 0; j < HIDDEN_SIZE; j++)
-        {
-            hidden_to_output[i][j] = ((double)rand() / RAND_MAX) - 0.5; // Random values between -0.5 and 0.5
-        }
-        output_bias[i] = 0.0;
+        layer[i].bias = ((double)rand() / RAND_MAX) - 0.5; // Random bias
     }
 }
 
-// Forward Pass
 void forward_pass()
 {
-    // Input to Hidden Layer
-    for (int i = 0; i < HIDDEN_SIZE; i++)
+    // Hidden layer
+    for (int i = 0; i < HIDDEN_NUMBER; i++)
     {
-        hidden_layer[i] = hidden_bias[i];
-        for (int j = 0; j < INPUT_SIZE; j++)
+        double sum = 0.0;
+        for (int j = 0; j < SIZE_ARRAY; j++)
         {
-            hidden_layer[i] += input_layer[j] * input_to_hidden[i][j];
+            sum += HIDDEN_LAYER[i].weights[j] * Input_Test[j];
         }
-        hidden_layer[i] = relu(hidden_layer[i]);
+        sum += HIDDEN_LAYER[i].bias;
+        HIDDEN_LAYER[i].output_signal = sigmoid(sum);
     }
 
-    // Hidden to Output Layer
-    for (int i = 0; i < OUTPUT_SIZE; i++)
+    // Output layer
+    double sum_exp = 0.0;
+    for (int i = 0; i < OUTPUT_NUMBER; i++)
     {
-        output_layer[i] = output_bias[i];
-        for (int j = 0; j < HIDDEN_SIZE; j++)
+        double sum = 0.0;
+        for (int j = 0; j < HIDDEN_NUMBER; j++)
         {
-            output_layer[i] += hidden_layer[j] * hidden_to_output[i][j];
+            sum += OUTPUT_LAYER[i].weights[j] * HIDDEN_LAYER[j].output_signal;
         }
+        sum += OUTPUT_LAYER[i].bias;
+        OUTPUT_LAYER[i].output_signal = exp(sum); // Using softmax preparation
+        sum_exp += OUTPUT_LAYER[i].output_signal;
     }
 
-    // Apply Softmax to Output Layer
-    vector<double> output_vector(output_layer, output_layer + OUTPUT_SIZE);
-    vector<double> softmax_output(OUTPUT_SIZE);
-    softmax(output_vector, softmax_output);
-    for (int i = 0; i < OUTPUT_SIZE; i++)
+    // Normalize output (Softmax)
+    for (int i = 0; i < OUTPUT_NUMBER; i++)
     {
-        output_layer[i] = softmax_output[i];
+        OUTPUT_LAYER[i].output_signal /= sum_exp;
     }
 }
 
-// Backward Pass
-void backward_pass(int correct_index)
+void backward_pass()
 {
-    double output_error[OUTPUT_SIZE];
-    double hidden_error[HIDDEN_SIZE];
-
-    // Output Error
-    for (int i = 0; i < OUTPUT_SIZE; i++)
+    // Output layer error
+    for (int i = 0; i < OUTPUT_NUMBER; i++)
     {
-        output_error[i] = output_layer[i] - (i == correct_index ? 1.0 : 0.0);
+        OUTPUT_LAYER[i].error_signal = Output_Need[i] - OUTPUT_LAYER[i].output_signal;
     }
 
-    // Update Hidden to Output Weights and Biases
-    for (int i = 0; i < OUTPUT_SIZE; i++)
+    // Hidden layer error
+    for (int i = 0; i < HIDDEN_NUMBER; i++)
     {
-        for (int j = 0; j < HIDDEN_SIZE; j++)
+        double sum = 0.0;
+        for (int j = 0; j < OUTPUT_NUMBER; j++)
         {
-            hidden_to_output[i][j] -= LEARNING_RATE * output_error[i] * hidden_layer[j];
+            sum += OUTPUT_LAYER[j].error_signal * OUTPUT_LAYER[j].weights[i];
         }
-        output_bias[i] -= LEARNING_RATE * output_error[i];
+        HIDDEN_LAYER[i].error_signal = HIDDEN_LAYER[i].output_signal * (1 - HIDDEN_LAYER[i].output_signal) * sum;
     }
 
-    // Hidden Layer Error
-    for (int i = 0; i < HIDDEN_SIZE; i++)
+    // Update weights for output layer
+    double learning_rate = 0.1;
+    for (int i = 0; i < OUTPUT_NUMBER; i++)
     {
-        hidden_error[i] = 0.0;
-        for (int j = 0; j < OUTPUT_SIZE; j++)
+        for (int j = 0; j < HIDDEN_NUMBER; j++)
         {
-            hidden_error[i] += output_error[j] * hidden_to_output[j][i];
+            OUTPUT_LAYER[i].weights[j] += learning_rate * OUTPUT_LAYER[i].error_signal * HIDDEN_LAYER[j].output_signal;
         }
-        hidden_error[i] *= relu_derivative(hidden_layer[i]);
+        OUTPUT_LAYER[i].bias += learning_rate * OUTPUT_LAYER[i].error_signal;
     }
 
-    // Update Input to Hidden Weights and Biases
-    for (int i = 0; i < HIDDEN_SIZE; i++)
+    // Update weights for hidden layer
+    for (int i = 0; i < HIDDEN_NUMBER; i++)
     {
-        for (int j = 0; j < INPUT_SIZE; j++)
+        for (int j = 0; j < SIZE_ARRAY; j++)
         {
-            input_to_hidden[i][j] -= LEARNING_RATE * hidden_error[i] * input_layer[j];
+            HIDDEN_LAYER[i].weights[j] += learning_rate * HIDDEN_LAYER[i].error_signal * Input_Test[j];
         }
-        hidden_bias[i] -= LEARNING_RATE * hidden_error[i];
+        HIDDEN_LAYER[i].bias += learning_rate * HIDDEN_LAYER[i].error_signal;
     }
-}
-
-// Train the Network
-void train(vector<vector<double>> &training_data, vector<int> &labels, int epochs)
-{
-    for (int epoch = 0; epoch < epochs; epoch++)
-    {
-        double total_loss = 0.0;
-        for (size_t i = 0; i < training_data.size(); i++)
-        {
-            // Load input
-            for (int j = 0; j < INPUT_SIZE; j++)
-            {
-                input_layer[j] = training_data[i][j];
-            }
-
-            // Forward and Backward Pass
-            forward_pass();
-            backward_pass(labels[i]);
-
-            // Calculate Loss
-            double correct_output = output_layer[labels[i]];
-            total_loss -= log(correct_output);
-        }
-        if (epoch % 100 == 0)
-        {
-            cout << "Epoch " << epoch << ", Loss: " << total_loss / training_data.size() << endl;
-        }
-    }
-}
-
-// Test the Network
-int predict(vector<double> &input)
-{
-    for (int i = 0; i < INPUT_SIZE; i++)
-    {
-        input_layer[i] = input[i];
-    }
-    forward_pass();
-
-    // Find the index of the maximum value in the output layer
-    int max_index = 0;
-    for (int i = 1; i < OUTPUT_SIZE; i++)
-    {
-        if (output_layer[i] > output_layer[max_index])
-        {
-            max_index = i;
-        }
-    }
-    return max_index;
 }
 
 int main()
 {
-    initialize_weights();
+    initialize_weights(HIDDEN_LAYER, HIDDEN_NUMBER, SIZE_ARRAY);
+    initialize_weights(OUTPUT_LAYER, OUTPUT_NUMBER, HIDDEN_NUMBER);
+    ofstream weights_file("weights.txt");
+    ofstream output_file1("output1.txt");
+    ofstream output_file2("output2.txt");
+    ofstream output_file3("output3.txt");
+    ofstream output_file4("output4.txt");
+    ofstream output_file5("output5.txt");
+    ofstream epoch_file("epoch.txt");
+    ofstream erorr_file("erorr.txt");
+    cout.precision(3);
 
-    // Training Data: Each row is an input, and the label is the index of the maximum value
-    vector<vector<double>> training_data = {
-        {0.1, 0.2, 0.3, 0.4, 0.5},
-        {0.9, 0.8, 0.7, 0.6, 0.5},
-        {0.2, 0.5, 0.1, 0.3, 0.4},
-        {0.4, 0.3, 0.9, 0.2, 0.1},
-        {0.3, 0.1, 0.4, 0.8, 0.2}};
-    vector<int> labels = {4, 0, 1, 2, 3}; // Correct index for each row
+    double mse = 0; // what mse?
+    QueryPerformanceFrequency(&Frequency);
 
-    train(training_data, labels, 1000);
+    weights_file << "output weights \t \t" << "hidden weights \n";
+    QueryPerformanceCounter(&Ticks1);
 
-    // Test the network
-    vector<double> test_input = {0.3, 0.6, 0.2, 0.1, 0.4};
-    int prediction = predict(test_input);
+    for (int epoch = 0; epoch < 1000; epoch++)
+    {
+        epoch_file << epoch << "\n";
+        mse = 0;
+        forward_pass();
+        backward_pass();
+        for (int k = 0; k < OUTPUT_NUMBER; k++)
+        {
+            weights_file << OUTPUT_LAYER[k].weights[k] << "\t";
+            weights_file << HIDDEN_LAYER[0].weights[k] << "\t";
+            mse += pow((OUTPUT_LAYER[k].output_signal - Output_Need[k]), 2);
+        }
+        cout << "|" << OUTPUT_LAYER[0].output_signal << "\t";
+        cout << "|" << OUTPUT_LAYER[1].output_signal << "\t";
+        cout << "|" << OUTPUT_LAYER[2].output_signal << "\t";
+        cout << "|" << OUTPUT_LAYER[3].output_signal << "\t";
+        cout << "|" << OUTPUT_LAYER[4].output_signal << "\t";
+        output_file1 << OUTPUT_LAYER[0].output_signal << "\n";
+        output_file2 << OUTPUT_LAYER[1].output_signal << "\n";
+        output_file3 << OUTPUT_LAYER[2].output_signal << "\n";
+        output_file4 << OUTPUT_LAYER[3].output_signal << "\n";
+        output_file5 << OUTPUT_LAYER[4].output_signal << "\n";
+        cout << "|" << mse << "\t" << "|" << epoch << endl;
+        erorr_file << mse << "\n";
 
-    cout << "Predicted index of the largest value: " << prediction << endl;
+        weights_file << endl;
+        system("cls");
+        cout << "----------------------------------learnig in process-------------------------" << endl;
+        cout << "|-out 1-|-out 2-|-out 3-|-out 4-|-out 5-|-error-|-epochs---------------------" << endl;
+    }
+    cout << "----------------------------------end learning-------------------------------" << endl;
+    system("cls");
+    QueryPerformanceCounter(&Ticks2);
+    cout << "----------------------------------learnig results----------------------------" << endl;
+
+    cout << "Results after training:\n";
+    for (int i = 0; i < OUTPUT_NUMBER; i++)
+    {
+        cout << "Output " << i << ": " << OUTPUT_LAYER[i].output_signal << endl;
+    }
+    // Input_Test[0] = 0.1;
+    // Input_Test[1] = 0.5;
+    // Input_Test[2] = 0.3;
+    // Input_Test[3] = 0.2;
+    // Input_Test[4] = 0.1;
+
+    // for (int i = 0; i < SIZE_ARRAY; i++)
+    // {
+    //     forward_pass();
+    //     cout << "Output " << i << ": " << OUTPUT_LAYER[i].output_signal << endl;
+    // }
+
+    output_file1.close();
+    output_file2.close();
+    output_file3.close();
+    output_file4.close();
+    output_file5.close();
+    weights_file.close();
+    epoch_file.close();
+    erorr_file.close();
+
+    ElapsedTime = (Ticks2.QuadPart - Ticks1.QuadPart) * 1000.0 / Frequency.QuadPart;
+    cout << ElapsedTime << " ms.\n";
 
     return 0;
 }
+
+// #include <iostream>
+// #include <cmath>
+// #include <cstdlib>
+// #include <ctime>
+// #include <fsteram>
+
+// using namespace std;
+
+// const int SIZE_ARRAY = 5;
+// const int HIDDEN_NUMBER = 3;
+// const int OUTPUT_NUMBER = SIZE_ARRAY;
+
+// double Input_Test[SIZE_ARRAY] = {0.1, 0.1, 0.3, 0.1, 0.2};
+// double Output_Need[SIZE_ARRAY] = {0, 0, 1, 0, 0};
+
+// struct Neuron
+// {
+//     double weights[SIZE_ARRAY];
+//     double bias;
+//     double output_signal;
+//     double error_signal;
+// };
+
+// Neuron HIDDEN_LAYER[HIDDEN_NUMBER];
+// Neuron OUTPUT_LAYER[OUTPUT_NUMBER];
+
+// double sigmoid(double x)
+// {
+//     return 1.0 / (1.0 + exp(-x));
+// }
+
+// void initialize_weights(Neuron layer[], int layer_size, int input_size)
+// {
+//     srand((unsigned)time(0));
+//     for (int i = 0; i < layer_size; i++)
+//     {
+//         for (int j = 0; j < input_size; j++)
+//         {
+//             layer[i].weights[j] = ((double)rand() / RAND_MAX) - 0.5; // Random weights [-0.5, 0.5]
+//         }
+//         layer[i].bias = ((double)rand() / RAND_MAX) - 0.5; // Random bias
+//     }
+// }
+
+// void forward_pass()
+// {
+//     // Hidden layer
+//     for (int i = 0; i < HIDDEN_NUMBER; i++)
+//     {
+//         double sum = 0.0;
+//         for (int j = 0; j < SIZE_ARRAY; j++)
+//         {
+//             sum += HIDDEN_LAYER[i].weights[j] * Input_Test[j];
+//         }
+//         sum += HIDDEN_LAYER[i].bias;
+//         HIDDEN_LAYER[i].output_signal = sigmoid(sum);
+//     }
+
+//     // Output layer
+//     double sum_exp = 0.0;
+//     for (int i = 0; i < OUTPUT_NUMBER; i++)
+//     {
+//         double sum = 0.0;
+//         for (int j = 0; j < HIDDEN_NUMBER; j++)
+//         {
+//             sum += OUTPUT_LAYER[i].weights[j] * HIDDEN_LAYER[j].output_signal;
+//         }
+//         sum += OUTPUT_LAYER[i].bias;
+//         OUTPUT_LAYER[i].output_signal = exp(sum); // Using softmax preparation
+//         sum_exp += OUTPUT_LAYER[i].output_signal;
+//     }
+
+//     // Normalize output (Softmax)
+//     for (int i = 0; i < OUTPUT_NUMBER; i++)
+//     {
+//         OUTPUT_LAYER[i].output_signal /= sum_exp;
+//     }
+// }
+
+// void backward_pass()
+// {
+//     // Output layer error
+//     for (int i = 0; i < OUTPUT_NUMBER; i++)
+//     {
+//         OUTPUT_LAYER[i].error_signal = Output_Need[i] - OUTPUT_LAYER[i].output_signal;
+//     }
+
+//     // Hidden layer error
+//     for (int i = 0; i < HIDDEN_NUMBER; i++)
+//     {
+//         double sum = 0.0;
+//         for (int j = 0; j < OUTPUT_NUMBER; j++)
+//         {
+//             sum += OUTPUT_LAYER[j].error_signal * OUTPUT_LAYER[j].weights[i];
+//         }
+//         HIDDEN_LAYER[i].error_signal = HIDDEN_LAYER[i].output_signal * (1 - HIDDEN_LAYER[i].output_signal) * sum;
+//     }
+
+//     // Update weights for output layer
+//     double learning_rate = 0.1;
+//     for (int i = 0; i < OUTPUT_NUMBER; i++)
+//     {
+//         for (int j = 0; j < HIDDEN_NUMBER; j++)
+//         {
+//             OUTPUT_LAYER[i].weights[j] += learning_rate * OUTPUT_LAYER[i].error_signal * HIDDEN_LAYER[j].output_signal;
+//         }
+//         OUTPUT_LAYER[i].bias += learning_rate * OUTPUT_LAYER[i].error_signal;
+//     }
+
+//     // Update weights for hidden layer
+//     for (int i = 0; i < HIDDEN_NUMBER; i++)
+//     {
+//         for (int j = 0; j < SIZE_ARRAY; j++)
+//         {
+//             HIDDEN_LAYER[i].weights[j] += learning_rate * HIDDEN_LAYER[i].error_signal * Input_Test[j];
+//         }
+//         HIDDEN_LAYER[i].bias += learning_rate * HIDDEN_LAYER[i].error_signal;
+//     }
+// }
+
+// int main()
+// {
+//     initialize_weights(HIDDEN_LAYER, HIDDEN_NUMBER, SIZE_ARRAY);
+//     initialize_weights(OUTPUT_LAYER, OUTPUT_NUMBER, HIDDEN_NUMBER);
+//     ofstream weights_file("weights.txt");
+//     ofstream output_file1("output1.txt");
+//     ofstream output_file2("output2.txt");
+//     ofstream output_file3("output3.txt");
+//     ofstream output_file4("output4.txt");
+//     ofstream output_file5("output5.txt");
+//     ofstream epoch_file("epoch.txt");
+//     ofstream erorr_file("erorr.txt");
+
+//     for (int epoch = 0; epoch < 5000; epoch++)
+//     {
+//         forward_pass();
+//         backward_pass();
+//     }
+
+//     cout << "Results after training:\n";
+//     for (int i = 0; i < OUTPUT_NUMBER; i++)
+//     {
+//         cout << "Output " << i << ": " << OUTPUT_LAYER[i].output_signal << endl;
+//     }
+//     Input_Test[0] = 0.1;
+//     Input_Test[1] = 0.5;
+//     Input_Test[2] = 0.3; 
+//     Input_Test[3] = 0.2;
+//     Input_Test[4] = 0.1;
+
+//     for(int i = 0; i < SIZE_ARRAY; i++){
+//         forward_pass();
+//         cout << "Output " << i << ": " << OUTPUT_LAYER[i].output_signal << endl;
+//     }
+
+//     output_file1.close();
+//     output_file2.close();
+//     output_file3.close();
+//     output_file4.close();
+//     output_file5.close();
+//     weights_file.close();
+//     epoch_file.close();
+//     erorr_file.close();
+
+//     return 0;
+// }
